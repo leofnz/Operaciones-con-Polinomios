@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Operaciones con polinomios</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#eef3e8;--ink:#12261a;--card:#fff;--line:#c9d6c2;--accent:#f2c230;--ok:#1f8f4e;--bad:#d64545;--mute:#4d6354;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a12;--ink:#e9f2e4;--card:#15271b;--line:#2b4433;--mute:#9bb3a2}}
+:root[data-theme="dark"]{--bg:#0d1a12;--ink:#e9f2e4;--card:#15271b;--line:#2b4433;--mute:#9bb3a2}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow',system-ui,sans-serif;min-height:100%}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-family:'Anton',Impact,sans-serif;font-weight:400;font-size:1.9rem;margin:0 0 12px;letter-spacing:.5px;line-height:1.15}
+.intro{margin:-4px 0 14px;color:var(--mute);font-size:1rem;line-height:1.5}
+.board{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{flex:1;min-width:96px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:8px 12px;border:2px solid var(--line);border-radius:10px;font-weight:700;background:var(--card)}
+.chip.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.chip b{font-family:'Anton',Impact,sans-serif;font-weight:400;font-size:1.4rem;color:var(--ok)}
+.card{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:16px}
+.kind{color:var(--mute);font-weight:600;margin:0 0 6px}
+.kind strong{color:var(--ink)}
+.expr{font-size:1.35rem;font-weight:700;line-height:1.7;margin:0 0 14px;overflow-x:auto;white-space:nowrap}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:420px){.opts{grid-template-columns:1fr}}
+.opt{font:inherit;font-weight:600;font-size:1.05rem;padding:12px 10px;border-radius:10px;border:2px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;overflow-x:auto;white-space:nowrap}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:focus-visible,.zone:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.msg{min-height:1.6em;font-weight:700;margin:12px 0 0}
+.btn{font:inherit;font-weight:700;font-size:1.05rem;margin-top:12px;padding:12px 20px;border:0;border-radius:10px;background:var(--accent);color:#2a2100;cursor:pointer;width:100%}
+.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--accent);margin-top:0}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.btn.alt.sel{background:var(--accent);color:#2a2100}
+.names{display:grid;gap:8px}
+.names input{font:inherit;font-weight:600;font-size:1.05rem;padding:11px 12px;border-radius:10px;border:2px solid var(--line);background:transparent;color:var(--ink);width:100%}
+.names input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hide{display:none!important}
+.stage{position:relative;height:300px;border-radius:12px;overflow:hidden;margin-top:6px;background:repeating-linear-gradient(90deg,#2f7d3a 0 40px,#2a7035 40px 80px)}
+.goal{position:absolute;top:10px;left:4%;right:4%;height:190px;border:6px solid #fff;border-bottom:0;border-radius:4px 4px 0 0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0 1px,transparent 1px 9px),repeating-linear-gradient(-45deg,rgba(255,255,255,.18) 0 1px,transparent 1px 9px),rgba(0,0,0,.22)}
+.line{position:absolute;top:200px;left:0;right:0;height:4px;background:#fff}
+.spot{position:absolute;left:50%;top:268px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#fff}
+.zones{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);z-index:3}
+.zone{font:inherit;font-weight:700;color:#fff;background:transparent;border:1px dashed rgba(255,255,255,.45);cursor:pointer;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.zone:hover:not(:disabled){background:rgba(242,194,48,.28)}
+.zone:disabled{cursor:default}
+.keeper{position:absolute;bottom:0;left:50%;width:44px;height:84px;transform:translateX(-50%);transition:left .35s ease-out,bottom .35s ease-out,transform .35s ease-out;z-index:2;pointer-events:none}
+.keeper::before{content:"";position:absolute;left:12px;top:0;width:20px;height:20px;border-radius:50%;background:#e8b48a}
+.keeper::after{content:"";position:absolute;left:4px;top:20px;width:36px;height:64px;border-radius:8px 8px 4px 4px;background:#e4572e}
+.keeper i{position:absolute;left:-16px;top:24px;width:76px;height:10px;border-radius:5px;background:#f2c230;z-index:1}
+.ball{position:absolute;left:50%;top:262px;font-size:34px;line-height:1;transform:translate(-50%,-50%);transition:left .5s ease-out,top .5s ease-out,font-size .5s;z-index:2}
+.big{font-family:'Anton',Impact,sans-serif;font-size:2.2rem;color:var(--accent);margin:4px 0 10px;text-align:center}
+.final{list-style:none;padding:0;margin:0 0 6px;font-weight:700;font-size:1.1rem}
+.final li{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}
+.format{margin:16px 2px 0;color:var(--mute);font-size:.95rem;line-height:1.5}
+.format strong{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.keeper,.ball{transition-duration:.01s}}
+</style>
+</head>
+<body>
+<main>
+<h1>Operaciones con polinomios</h1>
+<p class="intro">Resolver las siguientes operaciones que vayan apareciendo y presionar la opción correcta. Acertar suma un punto, y siempre se patea un penal: si es gol suma otro.</p>
+<div class="board hide" id="board"></div>
+
+<section id="setup" class="card">
+  <p class="kind"><strong>¿Cuántos jugadores van a jugar?</strong></p>
+  <div class="pick">
+    <button class="btn alt sel" data-n="2" aria-pressed="true">2 jugadores</button>
+    <button class="btn alt" data-n="3" aria-pressed="false">3 jugadores</button>
+  </div>
+  <p class="kind" style="margin-top:18px"><strong>Nombres de los jugadores</strong></p>
+  <div class="names" id="names"></div>
+  <button class="btn" id="start" style="margin-top:16px">Empezar</button>
+</section>
+
+<section id="quiz" class="card hide">
+  <p class="kind" id="kind"></p>
+  <p class="expr" id="expr"></p>
+  <div class="opts" id="opts"></div>
+  <p class="msg" id="qmsg"></p>
+  <button class="btn hide" id="toPen">Patear el penal</button>
+</section>
+
+<section id="pen" class="card hide">
+  <p class="kind" id="pkind"></p>
+  <div class="stage">
+    <div class="goal">
+      <div class="keeper" id="keeper"><i></i></div>
+      <div class="zones">
+        <button class="zone" data-z="0">Izquierda</button>
+        <button class="zone" data-z="1">Medio</button>
+        <button class="zone" data-z="2">Derecha</button>
+      </div>
+    </div>
+    <div class="line"></div><div class="spot"></div>
+    <div class="ball" id="ball">⚽</div>
+  </div>
+  <p class="msg" id="pmsg"></p>
+  <button class="btn hide" id="next"></button>
+</section>
+
+<section id="end" class="card hide">
+  <p class="kind"><strong>Fin del partido</strong></p>
+  <p class="big" id="winner"></p>
+  <ul class="final" id="final"></ul>
+  <button class="btn" id="again">Jugar de nuevo</button>
+</section>
+
+<p class="format"><strong>Formato:</strong> mejor de 3. Cada jugador resuelve 3 actividades, alternando de a una. Responder bien suma 1 punto y siempre se patea un penal: si mete gol, suma otro punto. Gana quien más puntos sume; si empatan, queda empate.</p>
+</main>
+
+<script>
+const ACTIVITIES=3, R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a, $=id=>document.getElementById(id);
+let n=0, turn=0, scores=[], correct='', pick=2;
+const draft=['Jugador 1','Jugador 2','Jugador 3'];
+let names=draft.slice();
+const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const total=()=>ACTIVITIES*n, cur=()=>turn<total()?turn%n:-1, pname=i=>names[i], ph=i=>esc(names[i]);
+
+function rp(deg,max=6){const p=[];for(let i=0;i<=deg;i++)p.push(R(-max,max));if(!p[deg])p[deg]=R(1,max);return p}
+function fmt(p){let s='';for(let i=p.length-1;i>=0;i--){const c=p[i];if(!c)continue;const a=Math.abs(c);let t=(a===1&&i>0)?'':a;if(i===1)t+='x';else if(i>1)t+='x<sup>'+i+'</sup>';s+=(s?(c<0?' − ':' + '):(c<0?'−':''))+t}return s||'0'}
+function add(p,q,k=1){const r=[];for(let i=0;i<Math.max(p.length,q.length);i++)r.push((p[i]||0)+k*(q[i]||0));return r}
+function mul(p,q){const r=Array(p.length+q.length-1).fill(0);p.forEach((a,i)=>q.forEach((b,j)=>r[i+j]+=a*b));return r}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=R(0,i);[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function hud(){
+  $('board').innerHTML=scores.map((s,i)=>'<span class="chip'+(i===cur()?' on':'')+'"><span>'+ph(i)+'</span><b>'+s+'</b></span>').join('');
+}
+
+function newQuestion(){
+  const op=['sum','res','mul'][R(0,2)];
+  let p,q,r,sym,name;
+  if(op==='mul'){p=rp(1,4);q=rp(R(1,2),4);r=mul(p,q);sym='·';name='Multiplicación de polinomios'}
+  else{const d=R(1,3);p=rp(d);q=rp(R(1,d));
+    if(op==='sum'){r=add(p,q);sym='+';name='Suma de polinomios'}
+    else{r=add(p,q,-1);sym='−';name='Resta de polinomios'}}
+  correct=fmt(r);
+  const seen=new Set([correct]), wrong=[];
+  const tries=[op==='sum'?add(p,q,-1):add(p,q), op==='mul'?add(p,q):add(q,p,-1)];
+  tries.forEach(a=>{const f=fmt(a);if(!seen.has(f)&&wrong.length<2){seen.add(f);wrong.push(f)}});
+  while(wrong.length<3){const a=r.slice(),i=R(0,a.length-1);a[i]+=R(0,1)?R(1,3):-R(1,3);const f=fmt(a);if(!seen.has(f)){seen.add(f);wrong.push(f)}}
+  const who=ph(cur()), act=Math.floor(turn/n)+1;
+  $('kind').innerHTML='<strong>Turno de '+who+'</strong> · actividad '+act+' de '+ACTIVITIES+'<br>'+name+': ¿cuál es el resultado?';
+  $('expr').innerHTML='('+fmt(p)+') '+sym+' ('+fmt(q)+')';
+  const box=$('opts');box.innerHTML='';
+  shuffle([correct,...wrong]).forEach(f=>{
+    const b=document.createElement('button');b.className='opt';b.innerHTML=f;b.dataset.f=f;
+    b.onclick=()=>answer(b);box.appendChild(b)});
+}
+
+function show(id){['setup','quiz','pen','end'].forEach(s=>$(s).classList.toggle('hide',s!==id))}
+
+function answer(btn){
+  const all=[...document.querySelectorAll('.opt')];all.forEach(b=>b.disabled=true);
+  if(btn.dataset.f===correct){scores[cur()]++;btn.classList.add('ok');$('qmsg').textContent='¡Correcto! '+pname(cur())+' suma 1 punto.'}
+  else{btn.classList.add('bad');all.find(b=>b.dataset.f===correct).classList.add('ok');$('qmsg').textContent='Esa no era. La respuesta correcta está en verde.'}
+  hud();$('toPen').classList.remove('hide');
+}
+
+function startTurn(){
+  hud();newQuestion();
+  $('qmsg').textContent='';$('toPen').classList.add('hide');
+  $('board').classList.remove('hide');show('quiz');
+}
+
+function setKeeper(x,rot,bottom,lift){
+  const k=$('keeper');k.style.left=x+'%';k.style.bottom=bottom+'px';
+  k.style.transform='translateX(-50%) translateY('+lift+'px) rotate('+rot+'deg)';
+}
+function resetPen(){
+  const b=$('ball');b.style.left='50%';b.style.top='262px';b.style.fontSize='34px';
+  setKeeper(50,0,0,0);$('pmsg').textContent='';$('next').classList.add('hide');
+  $('pkind').innerHTML='<strong>'+ph(cur())+'</strong>, elegí dónde patear: izquierda, medio o derecha.';
+  document.querySelectorAll('.zone').forEach(z=>z.disabled=false);
+}
+
+function shoot(z){
+  document.querySelectorAll('.zone').forEach(b=>b.disabled=true);
+  const k=R(0,2), xs=[17,50,83], ys=[85,108,85], p=cur();
+  const ball=$('ball');ball.style.left=xs[z]+'%';ball.style.top=ys[z]+'px';ball.style.fontSize='26px';
+  if(k===1)setKeeper(50,0,24,-6);else setKeeper(xs[k],k===0?-70:70,30,0);
+  setTimeout(()=>{
+    if(k!==z){scores[p]++;$('pmsg').textContent='¡GOOOL! '+pname(p)+' suma otro punto.'}
+    else $('pmsg').textContent='¡Lo atajó el arquero! Sin punto en el penal.';
+    hud();
+    const last=turn+1>=total();
+    $('next').textContent=last?'Ver resultado':'Turno de '+pname((turn+1)%n);
+    $('next').classList.remove('hide');
+  },750);
+}
+
+function finish(){
+  turn=total();hud();
+  const max=Math.max(...scores), w=scores.map((s,i)=>s===max?i:-1).filter(i=>i>=0);
+  $('winner').textContent=w.length===1?'¡Gana '+pname(w[0])+'!':'Empate'+(w.length===n?'':' entre '+w.map(pname).join(' y '));
+  $('final').innerHTML=scores.map((s,i)=>'<li><span>'+ph(i)+'</span><span>'+s+' / '+(ACTIVITIES*2)+' puntos</span></li>').join('');
+  show('end');
+}
+
+function renderNames(){
+  const box=$('names');box.innerHTML='';
+  for(let i=0;i<pick;i++){
+    const inp=document.createElement('input');
+    inp.type='text';inp.maxLength=16;inp.value=draft[i];
+    inp.setAttribute('aria-label','Nombre del jugador '+(i+1));
+    inp.oninput=()=>{draft[i]=inp.value};
+    inp.onfocus=()=>inp.select();
+    box.appendChild(inp);
+  }
+}
+document.querySelectorAll('#setup [data-n]').forEach(b=>b.onclick=()=>{
+  pick=+b.dataset.n;
+  document.querySelectorAll('#setup [data-n]').forEach(x=>{const on=x===b;x.classList.toggle('sel',on);x.setAttribute('aria-pressed',on)});
+  renderNames();
+});
+$('start').onclick=()=>{
+  n=pick;turn=0;scores=Array(n).fill(0);
+  names=draft.slice(0,n).map((v,i)=>v.trim()||'Jugador '+(i+1));
+  startTurn();
+};
+renderNames();
+$('toPen').onclick=()=>{show('pen');resetPen()};
+document.querySelectorAll('.zone').forEach(b=>b.onclick=()=>shoot(+b.dataset.z));
+$('next').onclick=()=>{turn++;if(turn>=total())finish();else startTurn()};
+$('again').onclick=()=>{$('board').classList.add('hide');show('setup')};
+</script>
+</body>
+</html>
